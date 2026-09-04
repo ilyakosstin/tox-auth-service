@@ -1,0 +1,123 @@
+spring:
+  application:
+    name: auth
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  datasource:
+    url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: http://auth.local.test:9000
+        client:
+          self:
+            token:
+              access-token-time-to-live: 5m
+            registration:
+              client-id: "auth-service"
+              client-secret: "{noop}auth-service-secret"
+              client-name: "Auth service"
+              client-authentication-methods:
+                - client_secret_post
+              authorization-grant-types:
+                - client_credentials
+              scopes:
+                - fs.admin
+          post-frontend:
+            token:
+              access-token-time-to-live: 12h
+            registration:
+              client-id: "post-frontend"
+              client-secret: "{noop}post-frontend-secret"
+              client-name: "Post frontend"
+              client-authentication-methods:
+                - client_secret_post
+              authorization-grant-types:
+                - authorization_code
+                - refresh_token
+              redirect-uris:
+                - http://localhost:3000/auth/callback
+              scopes:
+                - openid
+                - post.create
+                - post.delete
+                - post.edit
+                - fs.read
+            require-authorization-consent: false
+            require-proof-key: false
+          fs-frontend:
+            token:
+              access-token-time-to-live: 12h
+            registration:
+              client-id: "fs-frontend"
+              client-secret: "{noop}fs-frontend-secret"
+              client-name: "Post frontend"
+              client-authentication-methods:
+                - client_secret_post
+              authorization-grant-types:
+                - authorization_code
+                - refresh_token
+              redirect-uris:
+                - http://localhost:9080/fs/oauth2/callback/index.html
+              scopes:
+                - openid
+                - fs.read
+                - fs.write
+            require-authorization-consent: false
+            require-proof-key: false
+
+      resourceserver:
+        jwt:
+          issuer-uri: http://auth.local.test:9000
+
+      client:
+        registration:
+          self:
+            client-id: "auth-service"
+            client-secret: "auth-service-secret"
+            authorization-grant-type: client_credentials
+            client-authentication-method: client_secret_post
+            scope:
+              - fs.admin
+        provider:
+          self:
+            authorization-uri: http://auth.local.test:9000/oauth2/authorize
+            token-uri: http://auth.local.test:9000/oauth2/token
+            jwk-set-uri: http://auth.local.test:9000/oauth2/jwks
+            user-info-uri: http://auth.local.test:9000/userinfo
+
+server:
+  port: 9000
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+
+app:
+  avatar:
+    maxSizeMB: 10
+    side:
+      min: 128
+      max: 512
+    allowedMediaTypes: image/png,image/jpg,image/jpeg
